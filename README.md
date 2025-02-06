@@ -17,10 +17,15 @@ https://github.com/user-attachments/assets/7e54e58b-3831-4e5b-8ba3-72ec6398afc3
 
 ## Screenshots
 - User authentication
+  
 ![1](https://github.com/user-attachments/assets/3e031eb8-d424-4d7c-acde-385f0a13b83e)
+
 - Shopping cart management
+  
 ![2](https://github.com/user-attachments/assets/180a2d86-6fa5-4517-addf-fd627897acc6)
+
 - Checkout
+
 ![3](https://github.com/user-attachments/assets/1966e305-315e-496e-8272-1128847ddb2c)
 
 
