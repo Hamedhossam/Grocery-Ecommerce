@@ -14,34 +14,37 @@ class UserWidget extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'التوصيل لـ',
-                style: labelStyle,
-              ),
-              Row(
-                children: [
-                  SizedBox(
-                    width: MediaQuery.sizeOf(context).width / 2,
-                    child: Text(
-                      address,
-                      style: labelStyle?.copyWith(color: myGreenColor),
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: TextDirection.rtl,
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'التوصيل لـ',
+                  style: labelStyle,
+                ),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.sizeOf(context).width / 2,
+                      child: Text(
+                        address,
+                        style: labelStyle?.copyWith(color: myGreenColor),
+                        overflow: TextOverflow.ellipsis,
+                        textDirection: TextDirection.rtl,
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.location_on_outlined,
-                    color: myGreenColor,
-                    size: 20,
-                  ),
-                ],
-              )
-            ],
+                    const Icon(
+                      Icons.location_on_outlined,
+                      color: myGreenColor,
+                      size: 20,
+                    ),
+                  ],
+                )
+              ],
+            ),
           ),
           CircleAvatar(
             radius: 28,

@@ -1,14 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maram/core/models/user_model.dart';
 import 'package:maram/core/services/shared_preferences_servise.dart';
 import 'package:maram/modules/auth/presentation/screens/forget_password_screen.dart';
 import 'package:maram/modules/auth/presentation/screens/login_screen.dart';
 import 'package:maram/modules/auth/presentation/screens/otp_screen.dart';
 import 'package:maram/modules/auth/presentation/screens/sign_up_screen.dart';
-import 'package:maram/modules/home/logic/category_cubit/categories_cubit.dart';
 import 'package:maram/modules/home/presentation/screens/home_screen.dart';
 import 'package:maram/modules/home/presentation/screens/search_screen.dart';
 import 'package:maram/modules/on_boarding/presentation/screens/on_boarding_screen.dart';

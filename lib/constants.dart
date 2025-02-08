@@ -95,6 +95,6 @@ String generateRandom6DigitNumber() {
 
 String getFormattedDateTime() {
   final now = DateTime.now();
-  final formatter = DateFormat('dd-MM-yyyy hh:mm a');
+  final formatter = DateFormat('MM/dd/yyyy hh:mm a');
   return formatter.format(now);
 }

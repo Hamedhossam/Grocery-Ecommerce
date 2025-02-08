@@ -5,10 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maram/constants.dart';
 import 'package:maram/core/models/order_model.dart';
 import 'package:maram/core/models/product_model.dart';
+import 'package:maram/core/services/paymob_service.dart';
 import 'package:maram/core/services/supabase_services.dart';
 import 'package:maram/core/widgets/customized_botton.dart';
 import 'package:maram/modules/auth/presentation/widgets/custom_text_form_field.dart';
 import 'package:maram/modules/cart/logic/cart_cubit/cart_cubit.dart';
+import 'package:maram/modules/cart/presentation/screens/payment_screen.dart';
 import 'package:maram/modules/cart/presentation/widgets/dialog_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -54,7 +56,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   int? selectedValue = 1;
   String address =
-      ' طنطا ثاني شارع البنداري بجوار كافيه بوليفيا محافظة الغربية';
+      Supabase.instance.client.auth.currentUser!.userMetadata!['address'];
   TextEditingController addressController = TextEditingController();
   TextEditingController noteController = TextEditingController();
   bool editAddress = false;
@@ -65,58 +67,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     addressController.text = address;
     noteController.text = '';
   }
-//! edit address not working
-  // PersistentBottomSheetController editAddressBottomSheet(
-  //   BuildContext context,
-  //   String title,
-  //   TextEditingController? controller,
-  // ) {
-  //   bool isLoading = false;
-  //   return showBottomSheet(
-  //       backgroundColor: Colors.white,
-  //       context: context,
-  //       builder: (_) {
-  //         return Padding(
-  //           padding: const EdgeInsets.all(16.0),
-  //           child: SizedBox(
-  //             height: MediaQuery.sizeOf(context).height / 4,
-  //             child: Column(
-  //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //               children: [
-  //                 Text(
-  //                   title,
-  //                   style: specialStyle,
-  //                 ),
-  //                 const SizedBox(height: 16),
-  //                 CustomTextFormField(
-  //                   hintText: title,
-  //                   textInputType: TextInputType.text,
-  //                   controller: controller,
-  //                 ),
-  //                 CustomizedButton(
-  //                   isLoading: isLoading,
-  //                   tittle: 'حفظ',
-  //                   onTap: () {
-  //                     setState(() {
-  //                       isLoading = true; // Set loading to true
-  //                     });
-  //                     // Simulate a delay for saving the address
-  //                     Future.delayed(const Duration(seconds: 1), () {
-  //                       // After delay, update the address
-  //                       setState(() {
-  //                         address = controller!.text;
-  //                         isLoading = false; // Reset loading state
-  //                       });
-  //                       Navigator.pop(context); // Close the bottom sheet
-  //                     });
-  //                   },
-  //                 )
-  //               ],
-  //             ),
-  //           ),
-  //         );
-  //       });
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -364,52 +314,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 isLoading: isLoading,
                 tittle: 'تأكيد الطلب',
                 onTap: () async {
-                  isLoading ? null : setState(() => isLoading = true);
-                  try {
-                    await SupabaseServices.buyProducts(widget.cartProducts);
-                    List<String> images = [];
-                    for (var product in widget.cartProducts.keys) {
-                      images.add(product.image!);
-                    }
-                    String orderCode = generateRandom6DigitNumber();
-                    String orderDate = getFormattedDateTime();
-                    await SupabaseServices.createOrder(
-                      OrderModel(
-                        userId: Supabase.instance.client.auth.currentUser!.id,
-                        createdAt: orderDate,
-                        status: 'جاري التجهيز',
-                        paymentMethod:
-                            selectedValue == 1 ? 'كاش' : 'كارت الدفع',
-                        paymentStatus: 'لم يتم الدفع',
-                        deliveryMethod: selectedValue == 1 ? 'توصيل' : 'استلام',
-                        total:
-                            (widget.totalCost + widget.deliveryCost).toString(),
-                        note: noteController.text,
-                        productsImages: images,
-                        orderCode: orderCode,
-                        deliveryAddress: addressController.text,
-                      ),
-                    );
-                    await showDialog(
-                        // ignore: use_build_context_synchronously
-                        context: context,
-                        builder: (builder) => SuccessDialog(
-                              orderCode: orderCode,
-                              message:
-                                  'تم تأكيد الطلب بنجاح يمكنك متابعة الطلبات في صفحة الطلبات كود الطلب',
-                            ));
-                    // ignore: use_build_context_synchronously
-                    BlocProvider.of<CartCubit>(context).clearCart();
-                    await Future.delayed(const Duration(seconds: 1));
-                    // ignore: use_build_context_synchronously
-                    Navigator.pop(context);
-                  } on Exception catch (e) {
-                    log(e.toString());
-                    await showDialog(
-                      // ignore: use_build_context_synchronously
-                      context: context,
-                      builder: (builder) => const ErrorDialog(
-                        error: 'حدث خطأ يرجى المحاولة مرة اخرى',
+                  setState(() => isLoading = true);
+                  if (selectedValue == 1) {
+                    await checkOut(context);
+                  }
+                  if (selectedValue == 2) {
+                    String paymentToken = await PaymobServices.payWithPaymob(
+                        widget.totalCost + widget.deliveryCost, address);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PaymentScreen(
+                          paymentToken: paymentToken,
+                          cartProducts: widget.cartProducts,
+                          totalCost: widget.totalCost + widget.deliveryCost,
+                          note: noteController.text,
+                          address: addressController.text,
+                        ),
                       ),
                     );
                   }
@@ -421,5 +342,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> checkOut(BuildContext context) async {
+    try {
+      await SupabaseServices.buyProducts(widget.cartProducts);
+      List<String> images = [];
+      for (var product in widget.cartProducts.keys) {
+        images.add(product.image!);
+      }
+      String orderCode = generateRandom6DigitNumber();
+      String orderDate = getFormattedDateTime();
+      await SupabaseServices.createOrder(
+        OrderModel(
+          userId: Supabase.instance.client.auth.currentUser!.id,
+          createdAt: orderDate,
+          status: 'جاري التجهيز',
+          paymentMethod: selectedValue == 1 ? 'كاش' : 'كارت الدفع',
+          paymentStatus: 'لم يتم الدفع',
+          deliveryMethod: selectedValue == 1 ? 'توصيل' : 'استلام',
+          total: (widget.totalCost + widget.deliveryCost).toString(),
+          note: noteController.text,
+          productsImages: images,
+          orderCode: orderCode,
+          deliveryAddress: addressController.text,
+        ),
+      );
+      await showDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          builder: (builder) => SuccessDialog(
+                orderCode: orderCode,
+                message:
+                    'تم تأكيد الطلب بنجاح يمكنك متابعة الطلبات في صفحة الطلبات',
+              ));
+      // ignore: use_build_context_synchronously
+      BlocProvider.of<CartCubit>(context).clearCart();
+    } on Exception catch (e) {
+      log(e.toString());
+      await showDialog(
+        // ignore: use_build_context_synchronously
+        context: context,
+        builder: (builder) => const ErrorDialog(
+          error: 'حدث خطأ يرجى المحاولة مرة اخرى',
+        ),
+      );
+    }
+    Navigator.pop(context);
   }
 }

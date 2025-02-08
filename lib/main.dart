@@ -37,6 +37,7 @@ class GroceryApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        title: 'Grocery App',
         theme: ThemeData(fontFamily: "NotoKufiArabic"),
         onGenerateRoute: onGenerateRoutes,
         debugShowCheckedModeBanner: false,
